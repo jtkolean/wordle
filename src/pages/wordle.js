@@ -6,9 +6,10 @@ const wordle = "ABUSE";
 const maxAttempts = 6;
 const initialState = Object.freeze({
   wordle: wordle,
-  words: Object.freeze([""]),
+  words: Object.freeze(["", "", "", "", "", ""]),
   guess: 0,
   done: false,
+  error: Object.freeze([]),
 });
 
 const styles = {
@@ -54,13 +55,21 @@ function addLetter(state, letter) {
   const newWord = word.length === 0 ? "" : word;
   const newLetter = word.length < 5 ? letter : "";
   words[state.guess] = newWord.concat(newLetter);
-  return { ...state, words: words, error: word.length === 5 };
+  const error =
+    word.length === 5
+      ? [...state.error, "No more avaliable slots to add a letter"]
+      : state.error;
+  return { ...state, words: words, error: error };
 }
+
 function removeLetter(state) {
-  const { guess, words } = state;
-  const word = words[guess];
-  words[guess] = word.slice(0, -1);
-  return { ...state, error: word.length === 0 };
+  const words = [...state.words];
+  words[state.guess] = words[state.guess].slice(0, -1);
+  const error =
+    words[state.guess].length === 0
+      ? [...state.error, "No more letters to remove"]
+      : state.error;
+  return { ...state, words: words, error: error };
 }
 
 function submitWord(state, element) {
@@ -68,9 +77,8 @@ function submitWord(state, element) {
   const isValidWord = dictionary.includes(words[guess]);
   return {
     ...state,
-    words: isValidWord ? [...words, ""] : words,
     guess: isValidWord ? guess + 1 : guess,
-    error: !isValidWord,
+    error: !isValidWord ? [...state.error, "Not a valid word"] : [],
     done: words[guess] === wordle || guess === maxAttempts - 1,
   };
 }
@@ -86,6 +94,11 @@ function inputReducer(state, action) {
       return submitWord(state, action.element);
     case "PLAY_AGAIN":
       return initialState;
+    case "REMOVE_ERROR":
+      return {
+        ...state,
+        error: state.error.slice(0, -1),
+      };
     default:
       return state;
   }
@@ -118,6 +131,15 @@ export default function Wordle() {
     return () => window.removeEventListener("keyup", handleKeyPress);
   }, [state.done]);
 
+  useEffect(() => {
+    if (state.error.length > 0) {
+      setTimeout(() => {
+        console.log("pop error");
+        dispatch({ type: "REMOVE_ERROR" });
+      }, 1000);
+    }
+  }, [state.error]);
+
   return (
     <main>
       {JSON.stringify(state)}
@@ -135,49 +157,37 @@ export default function Wordle() {
 
 const Board = (props) => {
   const state = props.state;
-  const words = [...state.words]
-    .map((word, index) => {
-      const hints = state.guess > index ? giveHints(state.wordle, word) : [];
-      const letters = [...word.padEnd(5)];
-      return {
-        letters: letters.map((letter, i) => ({
-          letter: letter,
-          style: styles[hints[i]],
-        })),
-      };
-    })
-    .concat([
-      ...Array(maxAttempts).fill({
-        letters: Array(5).fill({
-          letter: "",
-        }),
-      }),
-    ])
-    .slice(0, maxAttempts);
-
   return (
     <div className="board">
-      {[...words].map(({ letters, classes }, index) => (
-        <Word key={index} classes={classes}>
-          {letters.map(({ letter, style }, letterIndex) => (
-            <Letter key={letterIndex} letter={letter} style={style} />
-          ))}
-        </Word>
-      ))}
+      {[...state.words].map((word, index) => {
+        const hints = index < state.guess ? giveHints(state.wordle, word) : [];
+        return (
+          <Word key={index} shake={state.guess === index && state.error.length}>
+            {[...word.padEnd(5)].map((letter, letterIndex) => (
+              <Letter key={letterIndex} color={hints[letterIndex]}>
+                {letter}
+              </Letter>
+            ))}
+          </Word>
+        );
+      })}
     </div>
   );
 };
 
 const Word = (props) => {
   return (
-    <div className={"row"} ref={props.reference}>
+    <div
+      className={"word shake"}
+      style={{ animationPlayState: props.shake ? "running" : "paused" }}
+    >
       {props.children}
     </div>
   );
 };
 
 const Letter = (props) => (
-  <div className="item" style={props.style}>
-    {props.letter}
+  <div className="letter-item" style={styles[props.color]}>
+    {props.children}
   </div>
 );

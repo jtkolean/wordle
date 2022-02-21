@@ -3,7 +3,7 @@ main {
 }
 
 .title {
-  text-align: "center";
+  text-align: center;
 }
 
 .board {
@@ -13,7 +13,7 @@ main {
   row-gap: 10px;
 }
 
-.row {
+.word {
   display: grid;
   grid-template-columns: repeat(5, 100px);
   column-gap: 10px;
@@ -21,7 +21,7 @@ main {
   justify-content: stretch;
 }
 
-.item {
+.letter-item {
   font-size: 60px;
   border: solid;
   border-radius: 15px;
@@ -29,10 +29,11 @@ main {
 }
 
 .shake {
-  animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  animation-name: shake;
+  animation-duration: 1s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
   transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  perspective: 1000px;
 }
 
 @keyframes shake {
