@@ -1,11 +1,8 @@
 # Wordle Challenge
-Clone it.
 
-## What is Wordle?
+Each guess must be a valid five-letter word.
 
-Guess the **WORDLE** in six tries.
-
-Each guess must be a valid five-letter word. Hit the enter button to submit.
+Hit the enter button to submit.
 
 After each guess, the color of the tiles will change to show how close your guess was to the word.
 
@@ -22,3 +19,10 @@ The letter I is in the word but in the wrong spot.
 #### V A G <span style="text-decoration:line-through">U</span> E
 
 The letter U is not in the word.
+
+## Setup locally
+
+```sh
+npm init
+npm run develop
+```
