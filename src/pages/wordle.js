@@ -6,7 +6,7 @@ const wordle = "ABUSE";
 const maxAttempts = 6;
 const initialState = Object.freeze({
   wordle: wordle,
-  words: Object.freeze(["", "", "", "", "", ""]),
+  words: Object.freeze(Array(6).fill("")),
   guess: 0,
   done: false,
   error: Object.freeze([]),
@@ -134,24 +134,25 @@ export default function Wordle() {
   useEffect(() => {
     if (state.error.length > 0) {
       setTimeout(() => {
-        console.log("pop error");
         dispatch({ type: "REMOVE_ERROR" });
       }, 1000);
     }
   }, [state.error]);
 
   return (
-    <main>
+    <div>
+      <main>
+        <h1 className="title">WORDLE</h1>
+        <Board state={state} />
+      </main>
+      <Keyboard state={state} />
       {JSON.stringify(state)}
       {state.done && (
         <button onClick={() => dispatch({ type: "PLAY_AGAIN" })}>
           Play Again
         </button>
       )}
-
-      <h1 className="title">WORDLE</h1>
-      <Board state={state} />
-    </main>
+    </div>
   );
 }
 
@@ -161,8 +162,9 @@ const Board = (props) => {
     <div className="board">
       {[...state.words].map((word, index) => {
         const hints = index < state.guess ? giveHints(state.wordle, word) : [];
+        const shake = state.guess === index && state.error.length;
         return (
-          <Word key={index} shake={state.guess === index && state.error.length}>
+          <Word key={index} shake={shake}>
             {[...word.padEnd(5)].map((letter, letterIndex) => (
               <Letter key={letterIndex} color={hints[letterIndex]}>
                 {letter}
@@ -175,19 +177,82 @@ const Board = (props) => {
   );
 };
 
-const Word = (props) => {
-  return (
-    <div
-      className={"word shake"}
-      style={{ animationPlayState: props.shake ? "running" : "paused" }}
-    >
-      {props.children}
-    </div>
-  );
-};
+const Word = (props) => (
+  <div
+    className="word shake"
+    style={{ animationPlayState: props.shake ? "running" : "paused" }}
+  >
+    {props.children}
+  </div>
+);
 
 const Letter = (props) => (
   <div className="letter-item" style={styles[props.color]}>
     {props.children}
   </div>
 );
+
+const KEYS = [
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["DELETE", "Z", "X", "C", "V", "B", "N", "M", "ENTER"],
+];
+
+const getKeyboardElement = (key, rowIndex, columnIndex, hint) => {
+  switch (key) {
+    case "DELETE":
+      return (
+        <button
+          type="button"
+          className="keyboard-double-key"
+          style={styles[hint]}
+        >
+          DEL
+        </button>
+      );
+    case "ENTER":
+      return (
+        <button
+          type="button"
+          className="keyboard-double-key"
+          style={styles[hint]}
+        >
+          ENTER
+        </button>
+      );
+    default:
+      return (
+        <button type="button" className="keyboard-key" style={styles[hint]}>
+          {key}
+        </button>
+      );
+  }
+};
+
+const Keyboard = (props) => {
+  const map = {};
+  const hints = [...props.state.words]
+    .filter((_, index) => props.state.guess > index)
+    .map((word) => {
+      const h = giveHints(props.state.wordle, word);
+      [...word].map((letter, index) => {
+        if (map.hasOwnProperty(letter) && map[letter] !== "correct") {
+          map[letter] = h[index];
+        } else {
+          map[letter] = h[index];
+        }
+      });
+    });
+
+  return (
+    <div className="keyboard">
+      {KEYS.map((row, rowIndex) => (
+        <div className="keyboard-row">
+          {[...row].map((key, index) =>
+            getKeyboardElement(key, rowIndex, index, map[key])
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
