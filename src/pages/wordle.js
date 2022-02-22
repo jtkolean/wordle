@@ -2,72 +2,86 @@ import React, { useEffect, useReducer } from "react";
 import dictionary from "../data/five-letter-words.json";
 import "../data/styles.css";
 import Keyboard from "../components/Keyboard";
-import { styles, giveHints } from "../data/wordle-common";
+import {
+  styles,
+  giveHints,
+  ALPHABET,
+  DELETE_KEYS,
+  SUBMIT_KEY,
+} from "../data/wordle-common";
 
 const wordle = "ABUSE";
-const maxAttempts = 6;
-const initialState = Object.freeze({
+
+const initialState = {
   wordle: wordle,
-  words: Object.freeze(Array(6).fill("")),
+  words: Array(6).fill(""),
   guess: 0,
   done: false,
-  error: Object.freeze([]),
-});
+  errors: [],
+};
 
 function addLetter(state, letter) {
-  const words = [...state.words];
-  const word = words[state.guess];
-  const newWord = word.length === 0 ? "" : word;
-  const newLetter = word.length < 5 ? letter : "";
-  words[state.guess] = newWord.concat(newLetter);
-  const error =
-    word.length === 5
-      ? [...state.error, "No more avaliable slots to add a letter"]
-      : state.error;
-  return { ...state, words: words, error: error };
+  const { guess, words } = state;
+  const word = words[guess];
+
+  if (word.length < 5) {
+    words[guess] = word + letter;
+    return { ...state, words: words };
+  } else {
+    return { ...state, errors: [...state.errors, "No more room"] };
+  }
 }
 
-function removeLetter(state) {
-  const words = [...state.words];
-  const error =
-    words[state.guess].length === 0
-      ? [...state.error, "No more letters to remove"]
-      : state.error;
-  words[state.guess] = words[state.guess].slice(0, -1);
+const removeLetter = (state) => {
+  const { guess, words } = state;
+  const word = words[guess];
 
-  return { ...state, words: words, error: error };
-}
+  if (word.length > 0) {
+    words[guess] = word.slice(0, -1);
+    return { ...state, words: words };
+  } else {
+    return { ...state, errors: [...state.errors, "Nothing to remove"] };
+  }
+};
 
-function submitWord(state, element) {
+const submitWord = (state) => {
   const { wordle, words, guess } = state;
-  const isValidWord = dictionary.includes(words[guess]);
-  return {
-    ...state,
-    guess: isValidWord ? guess + 1 : guess,
-    error: !isValidWord ? [...state.error, "Not a valid word"] : [],
-    done: words[guess] === wordle || guess === maxAttempts - 1,
-  };
-}
+  const word = words[guess];
 
-function inputReducer(state, action) {
-  switch (action.type) {
+  if (dictionary.includes(word)) {
+    return {
+      ...state,
+      guess: guess + 1,
+      done: word === wordle || guess === words.length - 1,
+    };
+  } else {
+    if (words[guess].length === 5) {
+      return { ...state, errors: [...state.errors, "Not a word"] };
+    } else {
+      return { ...state, errors: [...state.errors, "More letters required"] };
+    }
+  }
+};
+
+const inputReducer = (state, { type, key }) => {
+  switch (type) {
     case "ADD_LETTER":
-      return addLetter(state, action.key);
+      return addLetter(state, key);
     case "REMOVE_LETTER":
       return removeLetter(state);
     case "SUBMIT_WORD":
-      return submitWord(state, action.element);
+      return submitWord(state);
     case "PLAY_AGAIN":
-      return initialState;
+      return { ...initialState, words: Array(6).fill("") };
     case "REMOVE_ERROR":
       return {
         ...state,
-        error: state.error.slice(0, -1),
+        errors: state.errors.slice(0, -1),
       };
     default:
       return state;
   }
-}
+};
 
 export default function Wordle() {
   const [state, dispatch] = useReducer(inputReducer, initialState);
@@ -78,17 +92,14 @@ export default function Wordle() {
     }
 
     const handleKeyPress = (event) => {
-      const keyLabel = event.key.toUpperCase();
-      if ("ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(keyLabel)) {
-        dispatch({ type: "ADD_LETTER", key: keyLabel });
-      } else if ("DELETE" === keyLabel) {
+      const key = event.key.toUpperCase();
+
+      if (ALPHABET.includes(key)) {
+        dispatch({ type: "ADD_LETTER", key: key });
+      } else if (DELETE_KEYS.includes(key)) {
         dispatch({ type: "REMOVE_LETTER" });
-      } else if ("BACKSPACE" === keyLabel) {
-        dispatch({ type: "REMOVE_LETTER" });
-      } else if ("ENTER" === keyLabel) {
-        dispatch({
-          type: "SUBMIT_WORD",
-        });
+      } else if (SUBMIT_KEY === key) {
+        dispatch({ type: "SUBMIT_WORD" });
       }
     };
 
@@ -97,41 +108,56 @@ export default function Wordle() {
   }, [state.done]);
 
   useEffect(() => {
-    if (state.error.length > 0) {
-      setTimeout(() => {
-        dispatch({ type: "REMOVE_ERROR" });
-      }, 1000);
+    if (state.errors.length === 0) {
+      return;
     }
-  }, [state.error]);
+    setTimeout(() => {
+      dispatch({ type: "REMOVE_ERROR" });
+    }, 1000);
+  }, [state.errors]);
 
   return (
-    <div className="layout">
-      <div className="header">
-        <h2 className="title">WORDLE</h2>
+    <React.Fragment>
+      <div className="layout">
+        <div className="header">
+          <h2 className="title">WORDLE</h2>
+        </div>
+        <div className="main">
+          <Board state={state} />
+        </div>
+        <div className="side">
+          <Code value={state} />
+        </div>
+        <div className="footer">
+          <Keyboard state={state} dispatch={dispatch} />
+        </div>
       </div>
-      <div className="main">
-        <Board state={state} />
-        {state.done && (
-          <button onClick={() => dispatch({ type: "PLAY_AGAIN" })}>
-            Play Again
-          </button>
-        )}
-      </div>
-      <div className="side">
-        <pre>
-          {JSON.stringify(
-            Object.assign({}, state, { wordle: "*****" }),
-            null,
-            "  "
-          )}
-        </pre>
-      </div>
-      <div className="footer">
-        <Keyboard state={state} dispatch={dispatch} gameOver={state.done} />
-      </div>
-    </div>
+      {state.done && (
+        <div className="modal" onClick={() => dispatch({ type: "PLAY_AGAIN" })}>
+          <div className="modal-body">
+            <h1>
+              {state.wordle === state.words[state.guess - 1]
+                ? "Winner"
+                : "Unlucky"}
+            </h1>
+          </div>
+        </div>
+      )}
+    </React.Fragment>
   );
 }
+
+const Code = (props) => (
+  <pre>
+    {JSON.stringify(
+      props.value,
+      (key, value) => {
+        return key === "wordle" ? "*****" : value;
+      },
+      "  "
+    )}
+  </pre>
+);
 
 const Board = (props) => {
   const state = props.state;
@@ -139,7 +165,7 @@ const Board = (props) => {
     <div className="board">
       {[...state.words].map((word, index) => {
         const hints = index < state.guess ? giveHints(state.wordle, word) : [];
-        const shake = state.guess === index && state.error.length > 0;
+        const shake = state.guess === index && state.errors.length > 0;
         return (
           <Word key={index} shake={shake}>
             {[...word.padEnd(5)].map((letter, letterIndex) => (

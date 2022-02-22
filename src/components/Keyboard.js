@@ -79,6 +79,7 @@ const getLetterHints = ({ wordle, words, guess }) => {
 };
 
 const Keyboard = (props) => {
+  const { dispatch, done } = props.state;
   const map = getLetterHints(props.state);
 
   return (
@@ -86,14 +87,7 @@ const Keyboard = (props) => {
       {KEYS.map((row, rowIndex) => (
         <div className="keyboard-row" key={rowIndex}>
           {[...row].map((key, index) =>
-            createElement(
-              key,
-              rowIndex,
-              index,
-              map[key],
-              props.dispatch,
-              props.gameOver
-            )
+            createElement(key, rowIndex, index, map[key], dispatch, done)
           )}
         </div>
       ))}
