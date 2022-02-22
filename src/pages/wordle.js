@@ -140,7 +140,7 @@ export default function Wordle() {
             <h1>
               {state.wordle === state.words[state.guess - 1]
                 ? "Winner"
-                : "Unlucky"}
+                : state.wordle}
             </h1>
           </div>
         </div>
