@@ -15,12 +15,15 @@ const initialState = Object.freeze({
 const styles = {
   correct: {
     color: "green",
+    backgroundColor: "rgb(194, 255, 194)",
   },
   wrong: {
     color: "orange",
+    backgroundColor: "rgb(255, 245, 227)",
   },
   none: {
     color: "lightgray",
+    backgroundColor: "#ececec",
   },
 };
 
@@ -64,11 +67,12 @@ function addLetter(state, letter) {
 
 function removeLetter(state) {
   const words = [...state.words];
-  words[state.guess] = words[state.guess].slice(0, -1);
   const error =
     words[state.guess].length === 0
       ? [...state.error, "No more letters to remove"]
       : state.error;
+  words[state.guess] = words[state.guess].slice(0, -1);
+
   return { ...state, words: words, error: error };
 }
 
@@ -140,18 +144,38 @@ export default function Wordle() {
   }, [state.error]);
 
   return (
-    <div>
-      <main>
+    <div className="wrapper">
+      <div style={{ gridColumn: "2", gridRow: "1" }}>
         <h1 className="title">WORDLE</h1>
         <Board state={state} />
-      </main>
-      <Keyboard state={state} dispatch={dispatch} />
-      {JSON.stringify(state)}
-      {state.done && (
-        <button onClick={() => dispatch({ type: "PLAY_AGAIN" })}>
-          Play Again
-        </button>
-      )}
+      </div>
+      <div style={{ gridColumn: "2", gridRow: "2" }}>
+        <Keyboard state={state} dispatch={dispatch} />
+      </div>
+      <div
+        style={{
+          gridColumn: "3",
+          gridRow: "1 / 5",
+          alignSelf: "stretch",
+          fontSize: 45,
+        }}
+      >
+        <pre>{JSON.stringify(state, null, "\t")}</pre>
+      </div>
+      <div
+        style={{
+          gridColumn: "2",
+          gridRow: "3",
+          alignSelf: "stretch",
+          fontSize: 45,
+        }}
+      >
+        {state.done && (
+          <button onClick={() => dispatch({ type: "PLAY_AGAIN" })}>
+            Play Again
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -202,36 +226,36 @@ const getKeyboardElement = (key, rowIndex, columnIndex, hint, dispatch) => {
   switch (key) {
     case "DELETE":
       return (
-        <button
+        <div
           type="button"
           className="keyboard-double-key"
           style={styles[hint]}
-          onClick={() => dispatch({ type: "REMOVE_LETTER" })}
+          onClick={() => dispatch({ type: "REMOVE_LETTER", key: "DELETE" })}
         >
           DEL
-        </button>
+        </div>
       );
     case "ENTER":
       return (
-        <button
+        <div
           type="button"
           className="keyboard-double-key"
           style={styles[hint]}
           onClick={() => dispatch({ type: "SUBMIT_WORD" })}
         >
           ENTER
-        </button>
+        </div>
       );
     default:
       return (
-        <button
+        <div
           type="button"
           className="keyboard-key"
           style={styles[hint]}
           onClick={() => dispatch({ type: "ADD_LETTER", key: key })}
         >
           {key}
-        </button>
+        </div>
       );
   }
 };
@@ -243,8 +267,12 @@ const Keyboard = (props) => {
     .map((word) => {
       const h = giveHints(props.state.wordle, word);
       [...word].map((letter, index) => {
-        if (map.hasOwnProperty(letter) && map[letter] !== "correct") {
-          map[letter] = h[index];
+        if (map.hasOwnProperty(letter)) {
+          if (map[letter] === "none") {
+            map[letter] = h[index];
+          } else if (map[letter] === "wrong" && h[index] === "correct") {
+            map[letter] = h[index];
+          }
         } else {
           map[letter] = h[index];
         }

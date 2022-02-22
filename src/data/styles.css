@@ -3,6 +3,12 @@ main {
   margin: auto;
 }
 
+.wrapper {
+  display: grid;
+  grid-template-columns: 300px 1200px 300px;
+  justify-content: center;
+}
+
 .title {
   text-align: center;
 }
@@ -10,6 +16,7 @@ main {
 .board {
   display: grid;
   grid-template-rows: repeat(6, 100px);
+  justify-content: center;
   row-gap: 10px;
 }
 
@@ -31,9 +38,8 @@ main {
 .keyboard {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 50px;
   text-align: center;
 }
 
@@ -53,7 +59,6 @@ main {
   border-radius: 5px;
   padding: 5px;
 }
-
 
 .keyboard-double-key {
   border-color: gray;
