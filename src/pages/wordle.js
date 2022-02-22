@@ -145,7 +145,7 @@ export default function Wordle() {
         <h1 className="title">WORDLE</h1>
         <Board state={state} />
       </main>
-      <Keyboard state={state} />
+      <Keyboard state={state} dispatch={dispatch} />
       {JSON.stringify(state)}
       {state.done && (
         <button onClick={() => dispatch({ type: "PLAY_AGAIN" })}>
@@ -198,7 +198,7 @@ const KEYS = [
   ["DELETE", "Z", "X", "C", "V", "B", "N", "M", "ENTER"],
 ];
 
-const getKeyboardElement = (key, rowIndex, columnIndex, hint) => {
+const getKeyboardElement = (key, rowIndex, columnIndex, hint, dispatch) => {
   switch (key) {
     case "DELETE":
       return (
@@ -206,6 +206,7 @@ const getKeyboardElement = (key, rowIndex, columnIndex, hint) => {
           type="button"
           className="keyboard-double-key"
           style={styles[hint]}
+          onClick={() => dispatch({ type: "REMOVE_LETTER" })}
         >
           DEL
         </button>
@@ -216,13 +217,19 @@ const getKeyboardElement = (key, rowIndex, columnIndex, hint) => {
           type="button"
           className="keyboard-double-key"
           style={styles[hint]}
+          onClick={() => dispatch({ type: "SUBMIT_WORD" })}
         >
           ENTER
         </button>
       );
     default:
       return (
-        <button type="button" className="keyboard-key" style={styles[hint]}>
+        <button
+          type="button"
+          className="keyboard-key"
+          style={styles[hint]}
+          onClick={() => dispatch({ type: "ADD_LETTER", key: key })}
+        >
           {key}
         </button>
       );
@@ -249,7 +256,7 @@ const Keyboard = (props) => {
       {KEYS.map((row, rowIndex) => (
         <div className="keyboard-row">
           {[...row].map((key, index) =>
-            getKeyboardElement(key, rowIndex, index, map[key])
+            getKeyboardElement(key, rowIndex, index, map[key], props.dispatch)
           )}
         </div>
       ))}
