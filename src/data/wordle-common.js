@@ -2,16 +2,6 @@ const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const DELETE_KEYS = Object.freeze(["DELETE", "BACKSPACE"]);
 const SUBMIT_KEY = "ENTER";
 
-const wordle = "ABUSE";
-const maxAttempts = 6;
-const initialState = Object.freeze({
-  wordle: wordle,
-  words: Object.freeze(Array(6).fill("")),
-  guess: 0,
-  done: false,
-  error: Object.freeze([]),
-});
-
 const styles = {
   correct: {
     color: "green",

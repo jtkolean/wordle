@@ -1,19 +1,17 @@
 import React, { useEffect, useReducer } from "react";
 import dictionary from "../data/five-letter-words.json";
 import "../data/styles.css";
+import Board from "../components/Board";
 import Keyboard from "../components/Keyboard";
-import {
-  styles,
-  giveHints,
-  ALPHABET,
-  DELETE_KEYS,
-  SUBMIT_KEY,
-} from "../data/wordle-common";
+import Code from "../components/Code";
+import { ALPHABET, DELETE_KEYS, SUBMIT_KEY } from "../data/wordle-common";
 
-const wordle = "ABUSE";
+const generateWordle = () => {
+  return dictionary[Math.floor(Math.random() * dictionary.length)];
+};
 
 const initialState = {
-  wordle: wordle,
+  wordle: generateWordle(),
   words: Array(6).fill(""),
   guess: 0,
   done: false,
@@ -72,7 +70,11 @@ const inputReducer = (state, { type, key }) => {
     case "SUBMIT_WORD":
       return submitWord(state);
     case "PLAY_AGAIN":
-      return { ...initialState, words: Array(6).fill("") };
+      return {
+        ...initialState,
+        words: Array(6).fill(""),
+        wordle: generateWordle(),
+      };
     case "REMOVE_ERROR":
       return {
         ...state,
@@ -146,46 +148,3 @@ export default function Wordle() {
     </React.Fragment>
   );
 }
-
-const Code = (props) => (
-  <pre>
-    {JSON.stringify(
-      props.value,
-      (key, value) => {
-        return key === "wordle" ? "*****" : value;
-      },
-      "  "
-    )}
-  </pre>
-);
-
-const Board = (props) => {
-  const state = props.state;
-  return (
-    <div className="board">
-      {[...state.words].map((word, index) => {
-        const hints = index < state.guess ? giveHints(state.wordle, word) : [];
-        const shake = state.guess === index && state.errors.length > 0;
-        return (
-          <Word key={index} shake={shake}>
-            {[...word.padEnd(5)].map((letter, letterIndex) => (
-              <Letter key={letterIndex} color={hints[letterIndex]}>
-                {letter}
-              </Letter>
-            ))}
-          </Word>
-        );
-      })}
-    </div>
-  );
-};
-
-const Word = (props) => (
-  <div className={`word ${props.shake && "shake"}`}>{props.children}</div>
-);
-
-const Letter = (props) => (
-  <div className="letter" style={styles[props.color]}>
-    {props.children}
-  </div>
-);
